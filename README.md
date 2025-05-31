@@ -6,6 +6,24 @@ GHG Tracker collects and organizes data on emissions by sector and gas wherever 
 
 GHG Tracker Database is written entirely in Python to facilitate easier collaboration, maintainability, and integration with the broader data science ecosystem. The first phase of the project is building out the database. The next phase will be a high-level API that makes it easy to query the database. 
 
+## Python Envionrment setup
+We use [uv](https://docs.astral.sh/uv/) as our package manager for this project. If you want a crash course in uv, I suggest [Corey Schafer's tutorial](https://www.youtube.com/watch?v=AMdG7IjgSPM). The steps below will outline how to get started:
+
+1. Install uv. See the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) to find instructions on how to install uv for your operating system. If you are on MacOS, and use the [homebrew](https://brew.sh/) package manager, then you can use the following command:
+```sh
+brew install uv
+``` 
+2. Once installed, you can setup your virtual environment with the following command: 
+```sh
+uv sync
+```
+
+That's all there is to it becauase all the information to setup the environment is in the `uv.lock` and `pyporoject.toml` files. 
+
+> [!NOTE]  
+> We may have to add additional packages in the future. In that case, use `uv add PackageName` to update `pyproject.toml` and `uv.lock`. Then open a merge request to update the `.toml` and `.lock` files. 
+
+
 ## Database Setup
 
 We use Docker and Docker Compose to setup the database. Here are the steps to get start developing the database locally. 
