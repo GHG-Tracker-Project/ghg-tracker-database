@@ -1,4 +1,0 @@
-earth
-iso-3166-1
-iso-3166-2
-locode
