@@ -8,23 +8,41 @@ GHG Tracker Database is written entirely in Python to facilitate easier collabor
 
 ## Database Setup
 
-We use Docker and Docker Compose to setup the database.
-First define envionrment variables for postgres databse in `./.env`. The `.env` should look like this if developing locally:
+We use Docker and Docker Compose to setup the database. Here are the steps to get start developing the database locally. 
 
+1. Make sure you [Docker](https://docs.docker.com/get-started/get-docker/) installed on your machine.
+2. Make sure you are in the same directory as this `README.md` file. 
+3. Copy the command below to rename the envionrment variable file.
+This creates environment variables so you can access the database in the coming steps
 ```sh
-POSTGRES_USER="postgres"
-POSTGRES_PASSWORD="postgres"
-POSTGRES_DB="ghgtracker"
-POSTGRES_PORT="5432"
-POSTGRES_HOST="localhost"
-DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/ghgtracker"
+mv ./.env-example ./.env
 ```
-
-Use the following command to start a database in a container and expose it on localhost port 5432.
-
+4. Start the database in a container and expose it on localhost port 5432 with the following command.
 ```sh
 docker-compose up -d
 ```
+
+How you have an empty [Postgres](https://www.postgresql.org/) database server running in a Docker container. Any data you add to the database will persist in a docker volume. What this means is when you stop the container or even remove the container, the database will persist. 
+
+> [!NOTE]  
+> In lieu of using Docker, you could install a Postgres server on your computer. Steps to do this will be added in future.
+
+### Query the database
+There is no data in here ... yet. But when there is, one tool you can use is `psql` to send SQL queries to the database. Here the connection string:
+
+```sh
+psql -h localhost -p 5432 -U postgres -W -d ghgtracker
+```
+
+Alternatively, you could use a scripting language such as Python with the `psycopg` package to query the database. Dealer's choice.
+
+### Stopping the database
+
+Use the folling command
+```sh
+docker-compose down
+```
+
 
 ## Database migrations
 
