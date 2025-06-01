@@ -40,6 +40,11 @@ brew install uv
 ```sh
 uv sync
 ```
+3. Now install the project’s own code (e.g. `models` and `utils` packages) into your Python environment in editable mode. 
+```sh
+uv pip install -e .
+```
+This makes it so you can include `import utils` or `import models` into your scripts. May need to rerun this command if you these pacakges.
 
 That's all there is to it becauase all the information to setup the environment is in the `uv.lock` and `pyporoject.toml` files. 
 
