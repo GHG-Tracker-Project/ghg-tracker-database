@@ -1,36 +1,14 @@
-import os
-import sys
-sys.path.append(os.path.abspath(".."))
-
-import csv
 from datetime import datetime
-from datetime import date
+import os
 from pathlib import Path
-from typing import List
-from typing import Dict
 
 import pandas as pd
 
-from models.models import Actor, DataSource, ActorType
+from models import Actor, DataSource, ActorType
+from utils import write_csv
 
-def write_csv(
-    output_dir: str = None,
-    name: str = None,
-    data: List[Dict] | Dict = None,
-    mode: str = "w",
-    extension: str = "csv",
-) -> None:
-    """converts dictionary to CSV"""
-    if isinstance(data, dict):
-        data = [data]
-
-    with open(f"{output_dir}/{name}.{extension}", mode=mode) as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=data[0].keys())
-        writer.writeheader()
-        writer.writerows(data)
 
 def main():
-
     # ------------------------------------------
     # datasource table
     # ------------------------------------------
@@ -38,12 +16,12 @@ def main():
     publisher = "ipregistry"
 
     datasource = DataSource(
-        id = f"{publisher}:{datasource_name}",
-        name = "ISO-3166 data",
-        publisher = publisher,
-        published_date = datetime.strptime( "2023-11-23", "%Y-%m-%d"),
-        version = "2023-11-23",
-        url = "https://github.com/ipregistry/iso3166",
+        id=f"{publisher}:{datasource_name}",
+        name="ISO-3166 data",
+        publisher=publisher,
+        published_date=datetime.strptime("2023-11-23", "%Y-%m-%d"),
+        version="2023-11-23",
+        url="https://github.com/ipregistry/iso3166",
     )
 
     # load data
@@ -52,7 +30,10 @@ def main():
     output_dir.mkdir(parents=True, exist_ok=True)
 
     write_csv(
-        output_dir=output_dir, name=datasource.__tablename__, data=datasource.model_dump(), mode="w"
+        output_dir=output_dir,
+        name=datasource.__tablename__,
+        data=datasource.model_dump(),
+        mode="w",
     )
 
     # ------------------------------------------
@@ -63,27 +44,33 @@ def main():
     df = (
         pd.read_csv(fl, keep_default_na=False)
         .assign(
-            type = lambda x: x.apply(
-            lambda row: "adm2" if row['parent_subdivision'] else "adm1",
-            axis=1)
+            type=lambda x: x.apply(
+                lambda row: "adm2" if row["parent_subdivision"] else "adm1", axis=1
             )
+        )
         .assign(
-            is_part_of = lambda x: x.apply(
-            lambda row: row['parent_subdivision'] if row['parent_subdivision'] else row["#country_code_alpha2"],
-            axis=1)
+            is_part_of=lambda x: x.apply(
+                lambda row: row["parent_subdivision"]
+                if row["parent_subdivision"]
+                else row["#country_code_alpha2"],
+                axis=1,
             )
-        .rename(columns = {"subdivision_code_iso3166-2":"id", "subdivision_name": "name"})
-        .assign(datasource_id = datasource.id)
-        .sort_values(by = ["type", "id"])
-        [["id", "name", "is_part_of", "type", "datasource_id"]]
+        )
+        .rename(
+            columns={"subdivision_code_iso3166-2": "id", "subdivision_name": "name"}
+        )
+        .assign(datasource_id=datasource.id)
+        .sort_values(by=["type", "id"])[
+            ["id", "name", "is_part_of", "type", "datasource_id"]
+        ]
         .drop_duplicates()
         .drop_duplicates(subset="id", keep="first")
     )
 
     # === Manual topological sort ===
-    # solves the dependency problem 
-    # code from LLM, do not fully understand it. 
-    
+    # solves the dependency problem
+    # code is from LLM and I do not fully understand it. (not good)
+
     id_map = df.set_index("id")
     visited = set()
     ordered_ids = []
@@ -102,29 +89,27 @@ def main():
 
     # Apply the sorted order
     df = id_map.loc[ordered_ids].reset_index()
-    
+
     # === End Manual topological sort ===
 
     # data validation
     actors_validated = [
         Actor(
-            id = row.id,
-            name = row.name,
-            is_part_of = row.is_part_of,
-            type = ActorType(row.type),
-            datasource_id = row.datasource_id
+            id=row.id,
+            name=row.name,
+            is_part_of=row.is_part_of,
+            type=ActorType(row.type),
+            datasource_id=row.datasource_id,
         ).model_dump()
         for row in df.itertuples()
     ]
-    
-    write_csv(
-        output_dir=output_dir, name = Actor.__tablename__, data = actors_validated, mode="w"
-    )
-    
-    return df
 
+    write_csv(
+        output_dir=output_dir, name=Actor.__tablename__, data=actors_validated, mode="w"
+    )
+
+    return df
 
 
 if __name__ == "__main__":
     df = main()
-   # main()
