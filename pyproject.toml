@@ -27,3 +27,6 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["models", "utils"]
+
+[tool.ruff]
+lint.extend-select = ["PTH"]
