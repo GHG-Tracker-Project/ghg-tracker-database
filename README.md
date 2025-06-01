@@ -6,6 +6,22 @@ GHG Tracker collects and organizes data on emissions by sector and gas wherever 
 
 GHG Tracker Database is written entirely in Python to facilitate easier collaboration, maintainability, and integration with the broader data science ecosystem. The first phase of the project is building out the database. The next phase will be a high-level API that makes it easy to query the database. 
 
+## Project Structure
+
+```sh
+.
+├── LICENSE          # Project license specifying usage terms
+├── README.md        # Project overview and setup
+├── compose.yml      # Docker Compose defining container setup
+├── data/            # Raw or processed data files. Created after you run dvc pull
+├── data.dvc        # Data Version Control tracking file for data/
+├── migrations/     # Migration scripts to manage DB schema
+├── models/         # SQLModel defintitions
+├── pyproject.toml  # Python project metadata and dependencies
+├── scripts/        # Scripts to process raw data
+└── utils/          # Helper functions and common utilities
+```
+
 ## Data Management
 We use [DVC](https://dvc.org/) to version control all raw and procesesd data part of the database. DVC uses a [Storj](https://www.storj.io/) bucket as a remote. We will also maintain a public facing Zenodo data repository. 
 
