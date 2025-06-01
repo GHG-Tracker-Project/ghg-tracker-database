@@ -6,6 +6,29 @@ GHG Tracker collects and organizes data on emissions by sector and gas wherever 
 
 GHG Tracker Database is written entirely in Python to facilitate easier collaboration, maintainability, and integration with the broader data science ecosystem. The first phase of the project is building out the database. The next phase will be a high-level API that makes it easy to query the database. 
 
+## Data Management
+We use [DVC](https://dvc.org/) to version control all raw and procesesd data part of the database. DVC uses a [Storj](https://www.storj.io/) bucket as a remote. We will also maintain a public facing Zenodo data repository. 
+
+1. Install DVC [for you operating system](https://dvc.org/doc/install). If on MacOS you can use brew:
+```sh
+brew install dvc
+```
+2. Once installed, you will have to set the access_key and secret_key and store these locally:
+```sh
+ dvc remote modify --local storj access_key ACCESS_KEY
+ dvc remote modify --local storj secret_access_key SECRET_KEY
+ ```
+ 3. Now you can pull the data from the Storj bucket
+ ```sh
+ dvc pull
+ ```
+
+if you modify data, then use `dvc add data` and `dvc push` to update the remote data repostiory. 
+
+> [!NOTE]  
+> If you receive an error saying `[Errno 22] You must provide the Content-Length HTTP header` then you likely need to have the following envionrmenr variables set `export AWS_REQUEST_CHECKSUM_CALCULATION=when_required` and `export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required`. Not sure why this works, see [Stack Overflow question 79375793](https://stackoverflow.com/questions/79375793/s3uploadfailederror-due-to-missingcontentlength-when-calling-putobject-in-mlflow). If still doesn't work, then try removing and reinstalling `boto3` python package.
+
+
 ## Python Envionrment setup
 We use [uv](https://docs.astral.sh/uv/) as our package manager for this project. If you want a crash course in uv, I suggest [Corey Schafer's tutorial](https://www.youtube.com/watch?v=AMdG7IjgSPM). The steps below will outline how to get started:
 

@@ -1,4 +1,5 @@
 [core]
-    remote = gdrive
-['remote "gdrive"']
-    url = gdrive://1Zxk9XxTp2Kt8ytevsPwm7Yk0rGN7yFVj
+    remote = storj
+['remote "storj"']
+    url = s3://ghg-tracker-project-data
+    endpointurl = https://gateway.storjshare.io
