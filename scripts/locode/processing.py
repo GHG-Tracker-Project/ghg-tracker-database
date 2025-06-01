@@ -67,6 +67,8 @@ def main():
         ]
     )
 
+    df_actors_ids = df_actors["id"] # noqa: F841
+
     # this is a little cumbersome because it is long list comprehension
     # this could be improved
     df = pd.concat(
@@ -84,7 +86,7 @@ def main():
                     axis=1,
                 )
             )
-            .query("is_part_of.isin(@df_actors['id'])")
+            .query("is_part_of.isin(@df_actors_ids)")
             .assign(datasource_id=datasource.id)
             .assign(type="city")
             .rename(columns={"NameWoDiacritics": "name"})[
