@@ -31,7 +31,7 @@ brew install dvc
 ```
 2. Once installed, you will have to set the access_key and secret_key and store these locally:
 ```sh
- dvc remote modify --local storj access_key ACCESS_KEY
+ dvc remote modify --local storj access_key_id ACCESS_KEY
  dvc remote modify --local storj secret_access_key SECRET_KEY
  ```
  3. Now you can pull the data from the Storj bucket
@@ -39,7 +39,7 @@ brew install dvc
  dvc pull
  ```
 
-if you modify data, then use `dvc add data` and `dvc push` to update the remote data repostiory. 
+if you modify data, then use `dvc add data` and `dvc push` to update the remote data repostiory. And commit the updated dvc file with git.
 
 > [!NOTE]  
 > If you receive an error saying `[Errno 22] You must provide the Content-Length HTTP header` then you likely need to have the following envionrmenr variables set `export AWS_REQUEST_CHECKSUM_CALCULATION=when_required` and `export AWS_RESPONSE_CHECKSUM_VALIDATION=when_required`. Not sure why this works, see [Stack Overflow question 79375793](https://stackoverflow.com/questions/79375793/s3uploadfailederror-due-to-missingcontentlength-when-calling-putobject-in-mlflow). If still doesn't work, then try removing and reinstalling `boto3` python package.
