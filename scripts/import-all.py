@@ -69,7 +69,6 @@ with open("./data/manifest.txt", "r") as manifest:
         print(source)
 
         # list files in datasource in depdency order
-        # source = "iso-3166-1"
         path = Path(f"./data/{source}/processed")
         csv_files = [p.stem for p in path.glob("*.csv")]
         tables_to_import = [table for table in sorted_tables if table in csv_files]
