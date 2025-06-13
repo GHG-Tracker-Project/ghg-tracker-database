@@ -14,8 +14,11 @@ dependencies = [
     "netcdf4>=1.7.2",
     "pandas>=2.2.3",
     "psycopg>=3.2.9",
+    "psycopg2-binary>=2.9.10",
+    "python-dotenv>=1.1.0",
     "ruff>=0.11.12",
     "sqlmodel>=0.0.24",
+    "typer>=0.16.0",
     "xarray>=2025.4.0",
 ]
 
@@ -26,7 +29,10 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["models", "utils"]
+include = ["models", "utils", "cli"]
 
 [tool.ruff]
 lint.extend-select = ["PTH"]
+
+[project.scripts]
+importer = "cli.main:app"
