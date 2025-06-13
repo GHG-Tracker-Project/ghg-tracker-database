@@ -1,0 +1,49 @@
+schema: '2.0'
+stages:
+  earth:
+    cmd: importer earth > logs/earth.log
+    outs:
+    - path: logs/earth.log
+      hash: md5
+      md5: 6f6e5d014a4ccc47d6dc7064b820c83b
+      size: 175
+  iso-3166-1:
+    cmd: importer iso-3166-1 > logs/iso-3166-1.log
+    deps:
+    - path: logs/earth.log
+      hash: md5
+      md5: 6f6e5d014a4ccc47d6dc7064b820c83b
+      size: 175
+    outs:
+    - path: logs/iso-3166-1.log
+      hash: md5
+      md5: 363936f7b65bee41b810011cd9038076
+      size: 229
+  iso-3166-2:
+    cmd: importer iso-3166-2 > logs/iso-3166-2.log
+    deps:
+    - path: logs/iso-3166-1.log
+      hash: md5
+      md5: 363936f7b65bee41b810011cd9038076
+      size: 229
+    outs:
+    - path: logs/iso-3166-2.log
+      hash: md5
+      md5: d5274869f35221681bb2ed9558ea6f8a
+      size: 229
+  locode:
+    cmd: importer locode > logs/locode.log
+    deps:
+    - path: logs/iso-3166-1.log
+      hash: md5
+      md5: 363936f7b65bee41b810011cd9038076
+      size: 229
+    - path: logs/iso-3166-2.log
+      hash: md5
+      md5: d5274869f35221681bb2ed9558ea6f8a
+      size: 229
+    outs:
+    - path: logs/locode.log
+      hash: md5
+      md5: b5b30bfd76638f2ad326f77c4208bb29
+      size: 217
