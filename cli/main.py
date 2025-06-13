@@ -62,7 +62,9 @@ def sequential(source: str, url: str = DEFAULT_URL):
     sorted_tables = [table.name for table in SQLModel.metadata.sorted_tables]
 
     # list files in datasource in depdency order
-    path = Path(f"./data/{source}/processed")
+    # this ensure I can run the CLI from anywhere 
+    # and it will still resolve the path correctly
+    path = Path(__file__).resolve().parent.parent / "data" / source / "processed"
 
     print(f"[green]importing {source} from {path}")
     
