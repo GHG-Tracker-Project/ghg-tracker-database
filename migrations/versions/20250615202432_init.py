@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 20250503223559
+Revision ID: 20250615202432
 Revises: 
-Create Date: 2025-05-03 22:35:59.947385
+Create Date: 2025-06-15 20:24:33.076299
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '20250503223559'
+revision: str = '20250615202432'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -131,11 +131,11 @@ def upgrade() -> None:
     op.create_table('targets',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('actor_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('target_type', sa.Enum('absolute_reduction', name='targettype'), nullable=False),
+    sa.Column('target_type', sa.Enum('absolute_reduction', 'target_reduction', name='targettype'), nullable=False),
     sa.Column('target_value', sa.Float(), nullable=False),
     sa.Column('baseline_year', sa.Integer(), nullable=False),
     sa.Column('target_year', sa.Integer(), nullable=False),
-    sa.Column('url', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),

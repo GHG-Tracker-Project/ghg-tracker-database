@@ -1,5 +1,6 @@
 from logging.config import fileConfig
 import os
+from pathlib import Path
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -9,7 +10,9 @@ from dotenv import load_dotenv
 from sqlmodel import SQLModel
 
 #TODO: just load database_url from db.py?
-load_dotenv(dotenv_path=os.path.abspath("../.env"))
+#load_dotenv(dotenv_path=os.path.abspath("../.env"))
+envfile = Path(__file__).resolve().parent.parent / ".env" 
+load_dotenv(dotenv_path=envfile)
 
 DATABASE_URL= os.getenv("DATABASE_URL")
 
@@ -26,7 +29,7 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from models import models
+import models
 target_metadata = SQLModel.metadata
 
 # other values from the config, defined by the needs of env.py,
