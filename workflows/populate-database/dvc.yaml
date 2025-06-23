@@ -1,4 +1,9 @@
 stages:
+  gas_and_gwp:
+    cmd: importer gwp > logs/gwp.log
+    outs:
+      - logs/gwp.log
+
   earth:
     cmd: importer earth > logs/earth.log
     outs:

@@ -47,3 +47,10 @@ stages:
       hash: md5
       md5: b5b30bfd76638f2ad326f77c4208bb29
       size: 217
+  gas_and_gwp:
+    cmd: importer gwp > logs/gwp.log
+    outs:
+    - path: logs/gwp.log
+      hash: md5
+      md5: a7e9a152ffd45f130178d97407ef06dc
+      size: 206
