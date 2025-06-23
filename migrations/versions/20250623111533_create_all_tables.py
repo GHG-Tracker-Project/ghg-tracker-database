@@ -1,8 +1,8 @@
-"""init
+"""create all tables
 
-Revision ID: 20250615202432
+Revision ID: 20250623111533
 Revises: 
-Create Date: 2025-06-15 20:24:33.076299
+Create Date: 2025-06-23 11:15:34.272423
 
 """
 from typing import Sequence, Union
@@ -13,7 +13,7 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '20250615202432'
+revision: str = '20250623111533'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,13 +29,6 @@ def upgrade() -> None:
     sa.Column('published_date', sa.DateTime(), nullable=True),
     sa.Column('version', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('gas',
-    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.PrimaryKeyConstraint('id')
@@ -56,27 +49,93 @@ def upgrade() -> None:
     )
     op.create_table('gwp',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('gwp100', sa.Float(), nullable=False),
-    sa.Column('gas_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('gwp', sa.Float(), nullable=False),
+    sa.Column('time_horizon', sa.Integer(), nullable=False),
+    sa.Column('gas', sa.Enum('CO2', 'CH4', 'CH4_fossil', 'CH4_nonfossil', 'N2O', 'NF3', 'SF6', 'FGASES', 'HFCS', 'PFCS', 'KYOTOGHGS', name='gastype'), nullable=False),
+    sa.Column('assessment_report', sa.Enum('AR1', 'AR2', 'AR3', 'AR4', 'AR5', 'AR6', name='assessmentreport'), nullable=False),
     sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
-    sa.ForeignKeyConstraint(['gas_id'], ['gas.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('emissionstotalexlulucf',
+    op.create_table('sector',
+    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('code', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('parent_code', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('taxonomy', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
+    sa.ForeignKeyConstraint(['parent_code'], ['sector.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('emissions',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('actor_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('gas', sa.Enum('CO2', 'CH4', 'CH4_fossil', 'CH4_nonfossil', 'N2O', 'NF3', 'SF6', 'FGASES', 'HFCS', 'PFCS', 'KYOTOGHGS', name='gastype'), nullable=False),
+    sa.Column('sector_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('year', sa.Integer(), nullable=False),
     sa.Column('emissions', sa.Float(), nullable=False),
     sa.Column('units', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
     sa.ForeignKeyConstraint(['actor_id'], ['actor.id'], ),
     sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
+    sa.ForeignKeyConstraint(['sector_id'], ['sector.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('emissionsco2e',
+    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('actor_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('sector_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('gas', sa.Enum('CO2', 'CH4', 'CH4_fossil', 'CH4_nonfossil', 'N2O', 'NF3', 'SF6', 'FGASES', 'HFCS', 'PFCS', 'KYOTOGHGS', name='gastype'), nullable=False),
+    sa.Column('gwp_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('year', sa.Integer(), nullable=False),
+    sa.Column('emissions', sa.Float(), nullable=False),
+    sa.Column('units', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.ForeignKeyConstraint(['actor_id'], ['actor.id'], ),
+    sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
+    sa.ForeignKeyConstraint(['gwp_id'], ['gwp.id'], ),
+    sa.ForeignKeyConstraint(['sector_id'], ['sector.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('emissionstotalco2e',
+    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('actor_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('year', sa.Integer(), nullable=False),
+    sa.Column('emissions', sa.Float(), nullable=False),
+    sa.Column('aggregation_type', sa.Enum('total', 'total_ex_lulucf', name='aggregationtype'), nullable=False),
+    sa.Column('units', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('assessment_report', sa.Enum('AR1', 'AR2', 'AR3', 'AR4', 'AR5', 'AR6', name='assessmentreport'), nullable=False),
+    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.ForeignKeyConstraint(['actor_id'], ['actor.id'], ),
+    sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('emissionstotalsector',
+    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('actor_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('sector_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('year', sa.Integer(), nullable=False),
+    sa.Column('emissions', sa.Float(), nullable=False),
+    sa.Column('assessment_report', sa.Enum('AR1', 'AR2', 'AR3', 'AR4', 'AR5', 'AR6', name='assessmentreport'), nullable=False),
+    sa.Column('units', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
+    sa.ForeignKeyConstraint(['actor_id'], ['actor.id'], ),
+    sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
+    sa.ForeignKeyConstraint(['sector_id'], ['sector.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('energyconsumption',
@@ -115,18 +174,12 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('sector',
-    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('parend_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('level', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
-    sa.ForeignKeyConstraint(['parend_id'], ['actor.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    op.create_table('sectorrelation',
+    sa.Column('parent_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('child_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.ForeignKeyConstraint(['child_id'], ['sector.id'], ),
+    sa.ForeignKeyConstraint(['parent_id'], ['sector.id'], ),
+    sa.PrimaryKeyConstraint('parent_id', 'child_id')
     )
     op.create_table('targets',
     sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -143,36 +196,23 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_table('emissions',
-    sa.Column('id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('actor_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('year', sa.Integer(), nullable=False),
-    sa.Column('sector', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('emissions', sa.Float(), nullable=False),
-    sa.Column('units', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('datasource_id', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.ForeignKeyConstraint(['actor_id'], ['actor.id'], ),
-    sa.ForeignKeyConstraint(['datasource_id'], ['datasource.id'], ),
-    sa.ForeignKeyConstraint(['sector'], ['sector.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('emissions')
     op.drop_table('targets')
-    op.drop_table('sector')
+    op.drop_table('sectorrelation')
     op.drop_table('population')
     op.drop_table('gdp')
     op.drop_table('energyconsumption')
-    op.drop_table('emissionstotalexlulucf')
+    op.drop_table('emissionstotalsector')
+    op.drop_table('emissionstotalco2e')
+    op.drop_table('emissionsco2e')
+    op.drop_table('emissions')
+    op.drop_table('sector')
     op.drop_table('gwp')
     op.drop_table('actor')
-    op.drop_table('gas')
     op.drop_table('datasource')
     # ### end Alembic commands ###

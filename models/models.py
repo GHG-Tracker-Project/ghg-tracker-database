@@ -5,12 +5,64 @@
 #
 # author: Luke Gloege
 # Created: 2025-04-28
-#
+# Updates:
+#   2025-06-23 update emissions breakdown tables
 
 from enum import Enum
 from sqlmodel import SQLModel, Column, Field, TIMESTAMP, text, FetchedValue
 from typing import Optional
 from datetime import datetime
+
+# ============================================================
+# Enums
+# ============================================================
+
+
+class ActorType(str, Enum):
+    planet = "planet"
+    country = "country"
+    territory = "territory"
+    adm1 = "adm1"
+    adm2 = "adm2"
+    city = "city"
+
+
+class AssessmentReport(str, Enum):
+    AR1 = "AR1"
+    AR2 = "AR2"
+    AR3 = "AR3"
+    AR4 = "AR4"
+    AR5 = "AR5"
+    AR6 = "AR6"
+
+
+class TargetType(str, Enum):
+    absolute_reduction = "absolute_reduction"
+    target_reduction = "target_reduction"
+
+
+class AggregationType(str, Enum):
+    total = "total"
+    total_ex_lulucf = "total_ex_lulucf"
+
+
+class GasType(str, Enum):
+    CO2 = "CO2"
+    CH4 = "CH4"
+    CH4_fossil = "CH4_fossil"
+    CH4_nonfossil = "CH4_nonfossil"
+    N2O = "N2O"
+    NF3 = "NF3"
+    SF6 = "SF6"
+    FGASES = "FGASES"
+    HFCS = "HFCS"
+    PFCS = "PFCS"
+    KYOTOGHGS = "KYOTOGHGS"
+
+
+# ============================================================
+# Actor and DataSource
+# ============================================================
 
 
 # track external data sources for actor, emissions, targets, and contexual data
@@ -22,7 +74,6 @@ class DataSource(SQLModel, table=True):
     version: Optional[str]
     url: Optional[str]
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -30,7 +81,6 @@ class DataSource(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -38,16 +88,6 @@ class DataSource(SQLModel, table=True):
             server_onupdate=FetchedValue(),
         )
     )
-
-
-# ensure actor type is correct
-class ActorType(str, Enum):
-    planet = "planet"
-    country = "country"
-    territory = "territory"
-    adm1 = "adm1"
-    adm2 = "adm2"
-    city = "city"
 
 
 # table to track actors (country, subnational, city)
@@ -59,7 +99,6 @@ class Actor(SQLModel, table=True):
     sovereign_code: Optional[str] = Field(default=None, foreign_key="actor.id")
     datasource_id: Optional[str] = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -67,7 +106,6 @@ class Actor(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -86,36 +124,14 @@ class Actor(SQLModel, table=True):
 # ============================================================
 
 
-class Gas(SQLModel, table=True):
-    id: str = Field(primary_key=True)
-    name: str
-    created_at: Optional[datetime] = Field(
-        # default=None,
-        sa_column=Column(
-            TIMESTAMP(timezone=True),
-            nullable=False,
-            server_default=text("CURRENT_TIMESTAMP"),
-        )
-    )
-    updated_at: Optional[datetime] = Field(
-        # default=None,
-        sa_column=Column(
-            TIMESTAMP(timezone=True),
-            nullable=False,
-            server_default=text("CURRENT_TIMESTAMP"),
-            server_onupdate=FetchedValue(),
-        )
-    )
-
-
 class GWP(SQLModel, table=True):
     id: str = Field(primary_key=True)
-    name: str
-    gwp100: float
-    gas_id: str = Field(foreign_key="gas.id")
+    gwp: float
+    time_horizon: int
+    gas: GasType
+    assessment_report: AssessmentReport
     datasource_id: Optional[str] = Field(default=None, foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -123,7 +139,6 @@ class GWP(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -135,13 +150,13 @@ class GWP(SQLModel, table=True):
 
 class Sector(SQLModel, table=True):
     id: str = Field(primary_key=True)
+    code: str
+    parent_code: Optional[str] = Field(default=None, foreign_key="sector.id")
     name: str
-    parend_id: Optional[str] = Field(default=None, foreign_key="actor.id")
-    level: str
+    taxonomy: Optional[str]  # this should be a Enum
     description: Optional[str]
     datasource_id: Optional[str] = Field(default=None, foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -149,7 +164,6 @@ class Sector(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -157,6 +171,13 @@ class Sector(SQLModel, table=True):
             server_onupdate=FetchedValue(),
         )
     )
+
+
+# to create a sector dag
+# useful if a sector belongs to multiple parent categories
+class SectorRelation(SQLModel, table=True):
+    parent_id: str = Field(foreign_key="sector.id", primary_key=True)
+    child_id: str = Field(foreign_key="sector.id", primary_key=True)
 
 
 # ============================================================
@@ -166,42 +187,17 @@ class Sector(SQLModel, table=True):
 # ============================================================
 
 
-class EmissionsTotalExLULUCF(SQLModel, table=True):
-    id: str = Field(primary_key=True)
-    actor_id: str = Field(foreign_key="actor.id")
-    year: int
-    emissions: float
-    units: str
-    datasource_id: str = Field(foreign_key="datasource.id")
-    created_at: Optional[datetime] = Field(
-        # default=None,
-        sa_column=Column(
-            TIMESTAMP(timezone=True),
-            nullable=False,
-            server_default=text("CURRENT_TIMESTAMP"),
-        )
-    )
-    updated_at: Optional[datetime] = Field(
-        # default=None,
-        sa_column=Column(
-            TIMESTAMP(timezone=True),
-            nullable=False,
-            server_default=text("CURRENT_TIMESTAMP"),
-            server_onupdate=FetchedValue(),
-        )
-    )
-
-
+# raw emissions for each gas and sector
 class Emissions(SQLModel, table=True):
     id: str = Field(primary_key=True)
     actor_id: str = Field(foreign_key="actor.id")
+    gas: GasType
+    sector_id: str = Field(foreign_key="sector.id")
     year: int
-    sector: str = Field(foreign_key="sector.id")
     emissions: float
     units: str
-    datasource_id: str = Field(foreign_key="datasource.id")
+    datasource_id: Optional[str] = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -209,7 +205,6 @@ class Emissions(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -219,11 +214,86 @@ class Emissions(SQLModel, table=True):
     )
 
 
-class TargetType(str, Enum):
-    """this will grow, but for now we will only absolute emission reductions"""
+# raw emissions in for each gas and sector
+# in units of CO2e
+# do I even want to include this?
+class EmissionsCO2e(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    actor_id: str = Field(foreign_key="actor.id")
+    sector_id: str = Field(foreign_key="sector.id")
+    gas: GasType
+    gwp_id: str = Field(foreign_key="gwp.id")
+    year: int
+    emissions: float
+    units: str
+    datasource_id: Optional[str] = Field(foreign_key="datasource.id")
+    created_at: Optional[datetime] = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=text("CURRENT_TIMESTAMP"),
+        )
+    )
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=text("CURRENT_TIMESTAMP"),
+            server_onupdate=FetchedValue(),
+        )
+    )
 
-    absolute_reduction = "absolute_reduction"
-    target_reduction = "target_reduction"
+
+class EmissionsTotalSector(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    actor_id: str = Field(foreign_key="actor.id")
+    sector_id: str = Field(foreign_key="sector.id")
+    year: int
+    emissions: float
+    assessment_report: AssessmentReport
+    units: str
+    datasource_id: Optional[str] = Field(foreign_key="datasource.id")
+    created_at: Optional[datetime] = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=text("CURRENT_TIMESTAMP"),
+        )
+    )
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=text("CURRENT_TIMESTAMP"),
+            server_onupdate=FetchedValue(),
+        )
+    )
+
+
+class EmissionsTotalCO2e(SQLModel, table=True):
+    id: str = Field(primary_key=True)
+    actor_id: str = Field(foreign_key="actor.id")
+    year: int
+    emissions: float
+    aggregation_type: AggregationType
+    units: str
+    assessment_report: AssessmentReport
+    datasource_id: Optional[str] = Field(foreign_key="datasource.id")
+    created_at: Optional[datetime] = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=text("CURRENT_TIMESTAMP"),
+        )
+    )
+    updated_at: Optional[datetime] = Field(
+        sa_column=Column(
+            TIMESTAMP(timezone=True),
+            nullable=False,
+            server_default=text("CURRENT_TIMESTAMP"),
+            server_onupdate=FetchedValue(),
+        )
+    )
 
 
 class Targets(SQLModel, table=True):
@@ -236,7 +306,6 @@ class Targets(SQLModel, table=True):
     url: Optional[str]
     datasource_id: str = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -244,7 +313,6 @@ class Targets(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -270,7 +338,6 @@ class GDP(SQLModel, table=True):
     gdp: float
     datasource_id: str = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -278,7 +345,6 @@ class GDP(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -295,7 +361,6 @@ class Population(SQLModel, table=True):
     population: int
     datasource_id: str = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -303,7 +368,6 @@ class Population(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -320,7 +384,6 @@ class EnergyConsumption(SQLModel, table=True):
     consumption: float
     datasource_id: str = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
@@ -328,7 +391,6 @@ class EnergyConsumption(SQLModel, table=True):
         )
     )
     updated_at: Optional[datetime] = Field(
-        # default=None,
         sa_column=Column(
             TIMESTAMP(timezone=True),
             nullable=False,
