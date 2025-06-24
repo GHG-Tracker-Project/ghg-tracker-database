@@ -1,5 +1,5 @@
 stages:
-  gas_and_gwp:
+  gwp:
     cmd: importer gwp > logs/gwp.log
     outs:
       - logs/gwp.log
@@ -30,3 +30,10 @@ stages:
       - logs/iso-3166-2.log
     outs:
       - logs/locode.log
+
+  wpp:
+    cmd: importer wpp> logs/wpp.log
+    deps:
+      - logs/iso-3166-1.log
+    outs:
+      - logs/wpp.log
