@@ -32,8 +32,15 @@ stages:
       - logs/locode.log
 
   wpp:
-    cmd: importer wpp> logs/wpp.log
+    cmd: importer wpp > logs/wpp.log
     deps:
       - logs/iso-3166-1.log
     outs:
       - logs/wpp.log
+
+  world-bank-gdp:
+    cmd: importer world-bank > logs/world-bank.log
+    deps:
+      - logs/iso-3166-1.log
+    outs:
+      - logs/world-bank.log
