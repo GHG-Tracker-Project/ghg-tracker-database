@@ -25,7 +25,9 @@ def main():
 
     # load data
     # Note: Path(__file__).resolve().parent.parent same as "../"
-    data_dir = Path(__file__).resolve().parent.parent.parent / "data" / f"{datasource_name}"
+    data_dir = (
+        Path(__file__).resolve().parent.parent.parent / "data" / f"{datasource_name}"
+    )
     output_dir = data_dir / "processed"
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -178,7 +180,7 @@ def main():
     # model dump returns as dictionary
     targets_validated = [
         Targets(
-            id=f"{row.actor_id}:{target_type.value.replace(' ', '-')}:{row.target_year}",
+            id=f"{row.actor_id}:{target_type.value.replace(' ', '-')}:{row.baseline_year}:{row.target_year}",
             actor_id=row.actor_id,
             target_type=target_type,
             target_value=row.percent_reduction,
