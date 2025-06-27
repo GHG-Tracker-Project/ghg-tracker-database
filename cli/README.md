@@ -6,13 +6,13 @@ This is a work in progress.
 syntax:
 
 ```sh
-importer SOURCE
+importer seqential SOURCE
 ```
 
 for example, if you want to import `iso-3166-1` country names, then you run:
 
 ```sh
-importer iso-3166-1
+importer seqential iso-3166-1
 ```
 
 ## Notes
