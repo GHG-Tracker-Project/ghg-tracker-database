@@ -87,6 +87,8 @@ def bulk_insert_from_csv(csv_path, table, database_url):
 
 @app.command()
 def sequential(source: str, url: str = DEFAULT_URL):
+    """Imports each record seqentially.
+    Use this when there are recursive foreign keys in the table"""
     # all tables in dependcy order
     sorted_tables = [table.name for table in SQLModel.metadata.sorted_tables]
 
@@ -110,9 +112,8 @@ def sequential(source: str, url: str = DEFAULT_URL):
 
 @app.command()
 def bulk(source: str, url: str = DEFAULT_URL):
-    """this does not work, runs sucessfully, but nothing imports
-    considering just using the psql command:
-        psql $DATABASE_URL -c "\copy table_name FROM 'path/to/file.csv' WITH CSV HEADER"
+    """Imports all records at once.
+    Use this when there are no recursive foreign keys in the table
     """
     # all tables in dependcy order
     sorted_tables = [table.name for table in SQLModel.metadata.sorted_tables]
