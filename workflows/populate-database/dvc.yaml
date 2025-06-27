@@ -44,3 +44,17 @@ stages:
       - logs/iso-3166-1.log
     outs:
       - logs/world-bank.log
+
+  us-state-population:
+    cmd: importer sequential fred-state-population > logs/fred-state-population.log
+    deps:
+      - logs/iso-3166-2.log
+    outs:
+      - logs/fred-state-population.log
+
+  canada-province-population:
+    cmd: importer sequential canada-province-population > logs/canada-province-population.log
+    deps:
+      - logs/iso-3166-2.log
+    outs:
+      - logs/canada-province-population.log
