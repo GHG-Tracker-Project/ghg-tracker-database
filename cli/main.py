@@ -60,16 +60,21 @@ def insert_from_csv(csv_path, table, database_url, pkey="id"):
 
 
 def bulk_insert(curs: Cursor, table: str, csv_path: str):
-    """Insert CSV file using psycopg v3 COPY FROM STDIN"""
+    """Insert CSV file using psycopg v3 COPY FROM STDIN
+    for very large files, you want to chunk the file.
+    replace copy.write(f.read()) with :
+    while data := f.read(8192):
+        copy.write(data)
+    """
     # Get column names from CSV
     columns = pd.read_csv(csv_path, nrows=0).columns.tolist()
     column_names = ", ".join([f'"{col}"' for col in columns])
 
+    query = f'COPY "{table}" ({column_names}) FROM STDIN WITH CSV HEADER'
+
     with open(csv_path, "r", encoding="utf-8") as f:
-        curs.copy(
-            f'COPY "{table}" ({column_names}) FROM STDIN WITH CSV HEADER',
-            f,
-        )
+        with curs.copy(query) as copy:
+            copy.write(f.read())
 
 
 def bulk_insert_from_csv(csv_path, table, database_url):
@@ -78,32 +83,6 @@ def bulk_insert_from_csv(csv_path, table, database_url):
         with conn.cursor() as curs:
             bulk_insert(curs, table, csv_path)
             conn.commit()
-
-
-def psql_copy(csv_path: Path, table: str, database_url: str):
-    """Use `psql` command: `\copy table_name from csv_file with csv header`
-    THIS DOES NOT WORK FOR SOME TABLES
-    """
-
-    abs_path = csv_path.resolve()
-
-    # Get column names from CSV
-    columns = pd.read_csv(csv_path, nrows=0).columns.tolist()
-    column_names = ", ".join([f'"{col}"' for col in columns])
-
-    command = [
-        "psql",
-        database_url,
-        "-c",
-        f"\\copy {table} ({column_names})  FROM '{abs_path}' WITH CSV HEADER",
-    ]
-
-    print(f"[cyan]Running: {' '.join(command)}")
-
-    try:
-        subprocess.run(command, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"[red]Error importing {table} from {abs_path}:\n{e}")
 
 
 @app.command()
@@ -151,8 +130,7 @@ def bulk(source: str, url: str = DEFAULT_URL):
     for table in tables_to_import:
         print(f"[green]    populating the {table} table...")
         csv_file = path / f"{table}.csv"
-        # psql_copy(csv_file, table, url) # <--uses psql \copy, does not work
-        bulk_insert_from_csv(csv_file, table, url)  # <--uses psycopg, but does not work
+        bulk_insert_from_csv(csv_file, table, url)
 
     print(f"[green]\nSuccessfully imported {source} into the database !!\n")
 
