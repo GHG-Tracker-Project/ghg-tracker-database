@@ -1,3 +1,3 @@
-from .utils import write_csv
+from .utils import write_csv, display_excel_sheets
 
-__all__ = ["write_csv"]
+__all__ = ["write_csv", "display_excel_sheets"]
