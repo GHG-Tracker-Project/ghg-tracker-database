@@ -382,6 +382,9 @@ class EnergyConsumption(SQLModel, table=True):
     year: int
     actor_id: str = Field(foreign_key="actor.id")
     consumption: float
+    units: str  # e.g., "TJ", "Mtoe", "GWh"
+    fuel_type: str  # e.g., "coal", "solar", "oil" maybe enum?
+    energy_source: str  # e.g., "fossil", "renewable" maybe this should be enum?
     datasource_id: str = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
         sa_column=Column(
