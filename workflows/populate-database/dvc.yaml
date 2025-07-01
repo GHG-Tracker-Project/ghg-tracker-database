@@ -58,3 +58,10 @@ stages:
       - logs/iso-3166-2.log
     outs:
       - logs/canada-province-population.log
+
+  statistical-review-world-energy:
+    cmd: importer sequential statistical-review-world-energy > logs/statistical-review-world-energy.log
+    deps:
+      - logs/iso-3166-1.log
+    outs:
+      - logs/statistical-review-world-energy.log
