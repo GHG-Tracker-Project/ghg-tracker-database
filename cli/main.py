@@ -77,11 +77,109 @@ def bulk_insert(curs: Cursor, table: str, csv_path: str):
             copy.write(f.read())
 
 
+def bulk_insert_with_staging(
+    curs: Cursor, table: str, csv_path: str, primary_key: str = "id"
+):
+    """
+    Load CSV into a temporary staging table first,
+    then insert into target table skipping duplicates on primary key.
+    """
+    # Get column names from CSV
+    columns = pd.read_csv(csv_path, nrows=0).columns.tolist()
+    column_names = ", ".join([f'"{col}"' for col in columns])
+
+    staging_table = f"staging_{table}"
+
+    # Create temporary staging table
+    curs.execute(
+        f"""
+        CREATE TEMP TABLE {staging_table} (LIKE "{table}" INCLUDING ALL)
+    """
+    )
+
+    # Copy CSV into staging table
+    copy_query = f"COPY {staging_table} ({column_names}) FROM STDIN WITH CSV HEADER"
+
+    with open(csv_path, "r", encoding="utf-8") as f:
+        with curs.copy(copy_query) as copy:
+            copy.write(f.read())
+
+    # Insert into the actual table and skip duplicates
+    insert_query = f"""
+        INSERT INTO "{table}" ({column_names})
+        SELECT {column_names}
+        FROM {staging_table}
+        ON CONFLICT ("{primary_key}") DO NOTHING
+        """
+    curs.execute(insert_query)
+
+
+def bulk_upsert_with_staging(curs: Cursor, table: str, csv_path: str):
+    """
+    Automatically determines primary key from database,
+    then loads csv into staging and upserts into target table.
+    In other words, this will update rows that change
+    and insert new rows
+    """
+
+    # Get columns from CSV
+    columns = pd.read_csv(csv_path, nrows=0).columns.tolist()
+    column_names = ", ".join([f'"{col}"' for col in columns])
+
+    staging_table = f"staging_{table}"
+
+    # Look up primary key columns automatically
+    curs.execute(
+        """
+        SELECT a.attname
+        FROM pg_index i
+        JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+        WHERE i.indrelid = %s::regclass AND i.indisprimary
+    """,
+        (table,),
+    )
+    pk_columns = [row[0] for row in curs.fetchall()]
+    if not pk_columns:
+        raise ValueError(f"Table {table} has no primary key defined.")
+    conflict_clause = ", ".join([f'"{col}"' for col in pk_columns])
+
+    # Build the DO UPDATE SET clause (skip pk columns)
+    update_columns = [col for col in columns if col not in pk_columns]
+    if update_columns:
+        update_set_clause = ", ".join(
+            [f'"{col}" = EXCLUDED."{col}"' for col in update_columns]
+        )
+        on_conflict_action = f"DO UPDATE SET {update_set_clause}"
+    else:
+        # If no updatable columns (only PK), fallback to DO NOTHING
+        on_conflict_action = "DO NOTHING"
+
+    # Create temp staging table
+    curs.execute(f'CREATE TEMP TABLE {staging_table} (LIKE "{table}" INCLUDING ALL)')
+
+    # Copy CSV into staging table
+    copy_query = f"COPY {staging_table} ({column_names}) FROM STDIN WITH CSV HEADER"
+    with open(csv_path, "r", encoding="utf-8") as f:
+        with curs.copy(copy_query) as copy:
+            copy.write(f.read())
+
+    # Insert with ON CONFLICT DO UPDATE
+    insert_query = f"""
+        INSERT INTO "{table}" ({column_names})
+        SELECT {column_names}
+        FROM {staging_table}
+        ON CONFLICT ({conflict_clause})
+        {on_conflict_action}
+    """
+    curs.execute(insert_query)
+
+
 def bulk_insert_from_csv(csv_path, table, database_url):
     """sequentially insert into the database from a csv file"""
     with psycopg.connect(database_url) as conn:
         with conn.cursor() as curs:
-            bulk_insert(curs, table, csv_path)
+            # bulk_insert_with_staging(curs, table, csv_path)
+            bulk_upsert_with_staging(curs, table, csv_path)
             conn.commit()
 
 
