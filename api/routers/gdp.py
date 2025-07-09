@@ -2,7 +2,8 @@ import asyncio
 from fastapi import APIRouter
 import psycopg
 
-database_url = "postgresql://postgres:postgres@127.0.0.1:5432/ghgtracker"
+# database_url = "postgresql://postgres:postgres@127.0.0.1:5432/ghgtracker"
+database_url = "postgresql://postgres:postgres@postgres_db:5432/ghgtracker"
 
 router = APIRouter()
 
