@@ -18,3 +18,14 @@ services:
       - ghgtracker_data:/var/lib/postgresql/data
     networks:
       - ghgtracker_net
+
+  api:
+    build: .
+    ports:
+      - "8000:80"
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres_db
+    networks:
+      - ghgtracker_net
