@@ -151,7 +151,7 @@ class GWP(SQLModel, table=True):
 class Sector(SQLModel, table=True):
     id: str = Field(primary_key=True)
     code: str
-    parent_code: Optional[str] = Field(default=None, foreign_key="sector.id")
+    parent_code: Optional[str]
     name: str
     taxonomy: Optional[str]  # this should be a Enum
     description: Optional[str]
@@ -222,7 +222,8 @@ class EmissionsCO2e(SQLModel, table=True):
     actor_id: str = Field(foreign_key="actor.id")
     sector_id: str = Field(foreign_key="sector.id")
     gas: GasType
-    gwp_id: str = Field(foreign_key="gwp.id")
+    gwp_id: Optional[str] = Field(foreign_key="gwp.id")
+    assessment_report: AssessmentReport
     year: int
     emissions: float
     units: str
@@ -251,6 +252,7 @@ class EmissionsTotalSector(SQLModel, table=True):
     year: int
     emissions: float
     assessment_report: AssessmentReport
+    gases_included: Optional[str]
     units: str
     datasource_id: Optional[str] = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
@@ -278,6 +280,7 @@ class EmissionsTotalCO2e(SQLModel, table=True):
     aggregation_type: AggregationType
     units: str
     assessment_report: AssessmentReport
+    gases_included: Optional[str]
     datasource_id: Optional[str] = Field(foreign_key="datasource.id")
     created_at: Optional[datetime] = Field(
         sa_column=Column(
