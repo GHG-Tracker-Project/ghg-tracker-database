@@ -1,67 +1,130 @@
 stages:
   gwp:
-    cmd: importer sequential gwp > logs/gwp.log
+    cmd: importer bulk gwp > logs/gwp.log
     outs:
       - logs/gwp.log
 
   earth:
-    cmd: importer sequential earth > logs/earth.log
+    cmd: importer bulk earth > logs/earth.log
     outs:
       - logs/earth.log
 
   iso-3166-1:
-    cmd: importer sequential iso-3166-1 > logs/iso-3166-1.log
+    cmd: importer bulk iso-3166-1 > logs/iso-3166-1.log
     deps:
       - logs/earth.log
     outs:
       - logs/iso-3166-1.log
 
   iso-3166-2:
-    cmd: importer sequential iso-3166-2 > logs/iso-3166-2.log
+    cmd: importer bulk iso-3166-2 > logs/iso-3166-2.log
     deps:
       - logs/iso-3166-1.log
     outs:
       - logs/iso-3166-2.log
 
   locode:
-    cmd: importer sequential locode > logs/locode.log
+    cmd: importer bulk locode > logs/locode.log
     deps:
       - logs/iso-3166-1.log
       - logs/iso-3166-2.log
     outs:
       - logs/locode.log
 
+  # country population
   wpp:
-    cmd: importer sequential wpp > logs/wpp.log
+    cmd: importer bulk wpp > logs/wpp.log
     deps:
       - logs/iso-3166-1.log
     outs:
       - logs/wpp.log
 
+  # country gdp
   world-bank-gdp:
-    cmd: importer sequential world-bank > logs/world-bank.log
+    cmd: importer bulk world-bank > logs/world-bank.log
     deps:
       - logs/iso-3166-1.log
     outs:
       - logs/world-bank.log
 
   us-state-population:
-    cmd: importer sequential fred-state-population > logs/fred-state-population.log
+    cmd: importer bulk fred-state-population > logs/fred-state-population.log
     deps:
       - logs/iso-3166-2.log
     outs:
       - logs/fred-state-population.log
 
   canada-province-population:
-    cmd: importer sequential canada-province-population > logs/canada-province-population.log
+    cmd: importer bulk canada-province-population > logs/canada-province-population.log
     deps:
       - logs/iso-3166-2.log
     outs:
       - logs/canada-province-population.log
 
-  statistical-review-world-energy:
-    cmd: importer sequential statistical-review-world-energy > logs/statistical-review-world-energy.log
+  # has duplicates in AR:2010:biofuels
+  #  statistical-review-world-energy:
+  #    cmd: importer bulk statistical-review-world-energy > logs/statistical-review-world-energy.log
+  #    deps:
+  #      - logs/iso-3166-1.log
+  #    outs:
+  #      - logs/statistical-review-world-energy.log
+
+  # emission targets
+  net-zero-tracker:
+    cmd: importer bulk net-zero-tracker > logs/net-zero-tracker.log
     deps:
       - logs/iso-3166-1.log
     outs:
-      - logs/statistical-review-world-energy.log
+      - logs/net-zero-tracker.log
+
+  # sector codes
+  crt-on-nir:
+    cmd: importer bulk crt-on-nir > logs/crt-on-nir.log
+    outs:
+      - logs/crt-on-nir.log
+
+  # emissions
+  primap:
+    cmd: importer bulk primap > logs/primap.log
+    deps:
+      - logs/iso-3166-1.log
+      - logs/crt-on-nir.log
+      - logs/gwp.log
+    outs:
+      - logs/primap.log
+
+  epa-state-emissions:
+    cmd: importer bulk epa-state-emissions > logs/epa-state-emissions.log
+    deps:
+      - logs/iso-3166-2.log
+      - logs/crt-on-nir.log
+      - logs/gwp.log
+    outs:
+      - logs/epa-state-emissions.log
+
+  eccc-ghg-inventory:
+    cmd: importer bulk eccc-ghg-inventory > logs/eccc-ghg-inventory.log
+    deps:
+      - logs/iso-3166-2.log
+      - logs/crt-on-nir.log
+      - logs/gwp.log
+    outs:
+      - logs/eccc-ghg-inventory.log
+
+  naei-gb-subnational-emissions:
+    cmd: importer bulk naei-gb-subnational-emissions > logs/naei-gb-subnational-emissions.log
+    deps:
+      - logs/iso-3166-2.log
+      - logs/crt-on-nir.log
+      - logs/gwp.log
+    outs:
+      - logs/naei-gb-subnational-emissions.log
+
+  au-state-emissions:
+    cmd: importer bulk au-state-emissions > logs/au-state-emissions.log
+    deps:
+      - logs/iso-3166-2.log
+      - logs/crt-on-nir.log
+      - logs/gwp.log
+    outs:
+      - logs/au-state-emissions.log
