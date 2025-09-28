@@ -8,6 +8,7 @@ from routers import (
     population,
     root,
     targets,
+    contextual,
 )
 
 api_router = APIRouter(prefix="/api/v0")
@@ -20,3 +21,4 @@ api_router.include_router(gdp.router)
 api_router.include_router(gwp.router)
 api_router.include_router(targets.router)
 api_router.include_router(emissions.router)
+api_router.include_router(contextual.router)
